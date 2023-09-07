@@ -11,7 +11,7 @@ workflows:
               node-version: ["16", "18", "20"]
 
 orbs:
-  node: circleci/node@4.7
+  node: circleci/node@5.1.0
 
 jobs:
   test-node:
