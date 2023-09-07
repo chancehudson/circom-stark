@@ -1,4 +1,4 @@
-# circom-stark
+# circom-stark [![CircleCI](https://img.shields.io/circleci/build/github/vimwitch/circom-stark/main)](https://app.circleci.com/pipelines/github/vimwitch/circom-stark)
 
 A lightweight turing-incomplete assembly language for STARK proofs. Designed to express r1cs proofs in STARKs.
 
