@@ -1,7 +1,12 @@
-import { field, starkVariables, defaultStark } from 'starkstark'
+import { starkVariables, defaultStark } from 'starkstark'
 import { MultiPolynomial } from 'starkstark/src/MultiPolynomial.mjs'
 import { Polynomial } from 'starkstark/src/Polynomial.mjs'
 import { ScalarField } from 'starkstark/src/ScalarField.mjs'
+
+export const field = new ScalarField(
+  1n + 407n * (1n << 119n),
+  85408008396924667383611388730472331217n
+)
 
 // compile an assembly file to a set of STARK constraints
 const validOperations = {
@@ -36,7 +41,7 @@ const opcodeCount = Object.keys(validOperations).length - 1
 
 // program should be the compiled program output from `compile`
 export function buildTrace(program, inputs = {}) {
-  const { field, steps, registerCount, memoryRegisterCount, opcodeRegisterCount } = program
+  const { steps, registerCount, memoryRegisterCount, opcodeRegisterCount } = program
   const trace = []
   const memoryRegisters = Array(memoryRegisterCount).fill(0n)
   for (const { opcode, name, args } of steps) {
@@ -155,10 +160,6 @@ export function compile(asm) {
   // then a selector for each possible opcode
   // then a single free input register
   const registerCount = memoryRegisterCount * 4 + opcodeRegisterCount + 1
-  const field = new ScalarField(
-    1n + 407n * (1n << 119n),
-    85408008396924667383611388730472331217n
-  )
   const variables = Array(1+2*registerCount)
     .fill()
     .map((_, i) => new MultiPolynomial(field).term({ coef: 1n, exps: { [i]: 1n }}))
@@ -278,6 +279,6 @@ export function compile(asm) {
   return {
     constraints,
     boundary,
-    program: { field, steps, registerCount, memoryRegisterCount, opcodeRegisterCount }
+    program: { steps, registerCount, memoryRegisterCount, opcodeRegisterCount }
   }
 }
