@@ -6,7 +6,7 @@ A lightweight turing-incomplete assembly language for STARK proofs. Designed to 
 
 Each line of a circuitvm `asm` file should contain an opcode, followed by registers to operate on. Each argument should be separated by exactly 1 space. Numbers may be prefixed by `0x` for hex, or written normally for decimal.
 
-Lines starting with `#` or containing only whitespace are ignored.
+Lines starting with `;` or containing only whitespace are ignored.
 
 ## Opcodes
 

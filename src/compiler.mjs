@@ -104,14 +104,15 @@ export function compile(asm) {
   const steps = asm
     .split('\n')
     .filter(line => {
-      if (line.startsWith('#')) return false
+      if (line.trim().startsWith(';')) return false
       if (line.trim().length === 0) return false
       return true
     })
     .map(line => line.trim())
     .map(line => line.split(' '))
     .map((operation, i) => {
-      const [ op, ...args ] = operation
+      const commentIndex = operation.indexOf(';')
+      const [ op, ...args ] = commentIndex >= 0 ? operation.slice(0, commentIndex) : operation
       if (!validOperations[op]) {
         throw new Error(`Invalid op "${op}"`)
       }
