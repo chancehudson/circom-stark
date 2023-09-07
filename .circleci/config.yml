@@ -1,0 +1,40 @@
+version: 2.1
+
+workflows:
+  test:
+    jobs:
+      - test-node:
+          context:
+            - org-global
+          matrix:
+            parameters:
+              node-version: ["16", "18", "20"]
+
+orbs:
+  node: circleci/node@4.7
+
+jobs:
+  test-node:
+    resource_class: medium
+    parameters:
+      node-version:
+        type: string
+    machine:
+      image: ubuntu-2204:2022.04.1
+    steps:
+      - checkout
+      - node/install:
+          node-version: << parameters.node-version >>
+      - run:
+          name: Fetch rstark wasm
+          command: |
+            cd ..
+            wget https://github.com/vimwitch/rstark/releases/download/alpha-1/rstark.tar.gz
+            tar -xzf rstark.tar.gz
+      - run:
+          name: Install Packages
+          command: npm i
+      - run:
+          name: Test
+          command: npm run test
+
