@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "rstark": "../rstark/pkg",
-    "starkstark": "vimwitch/starkstark"
+    "starkstark": "vimwitch/starkstark#main"
   },
   "author": "",
   "license": "MIT",
