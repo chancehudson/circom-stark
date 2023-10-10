@@ -30,6 +30,10 @@ const validOperations = {
     argumentCount: 2,
     opcode: 0x4,
   },
+  inv: {
+    argumentCount: 2,
+    opcode: 0x5,
+  },
   out: {
     argumentCount: 2,
     // virtual opcode not present in trace
@@ -86,6 +90,11 @@ export function buildTrace(program, inputs = {}) {
       // set a dummy output, this is constrained
       // to not change in the vm
       outputSelector[0] = 1n
+    } else if (name === 'inv') {
+      read1Selector[+args[1]] = 1n
+      read2Selector[0] = 1n
+      outputSelector[+args[0]] = 1n
+      memoryRegisters[+args[0]] = field.inv(memoryRegisters[+args[1]])
     }
     trace.push([currentMemory, outputSelector, read1Selector, read2Selector, opcodeSelector, freeInput].flat())
   }
@@ -241,6 +250,9 @@ export function compile(asm) {
 
   const neg = read1.copy().add(output)
   constraints.push(neg.copy().mul(prevState[4*memoryRegisterCount+validOperations['neg'].opcode]))
+
+  const inv = read1.copy().mul(output).sub(one)
+  constraints.push(inv.copy().mul(prevState[4*memoryRegisterCount+validOperations['inv'].opcode]))
 
   // this constraint is degree 5!
   // TODO: possibly use the free input register to reduce this

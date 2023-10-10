@@ -158,3 +158,29 @@ eq 0x0 0x1
   await proveAndVerify(asm)
   t.pass()
 })
+
+test('should mod inverse in place (0x2)', async t => {
+  const v = field.random()
+  const vInv = field.inv(v)
+  const asm = `
+set 0x0 ${v.toString()}
+set 0x1 ${vInv.toString()}
+inv 0x2 0x0
+eq 0x2 0x1
+  `
+  await proveAndVerify(asm)
+  t.pass()
+})
+
+test('should mod inverse in place (0x0)', async t => {
+  const v = field.random()
+  const vInv = field.inv(v)
+  const asm = `
+set 0x0 ${v.toString()}
+set 0x1 ${vInv.toString()}
+inv 0x0 0x0
+eq 0x0 0x1
+  `
+  await proveAndVerify(asm)
+  t.pass()
+})
