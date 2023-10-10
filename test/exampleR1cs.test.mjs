@@ -14,14 +14,10 @@ function serializeBigint(v) {
 }
 
 test('should compile and prove r1cs', async t => {
-  const inputMemory = [
-    1n,
+  const input = [
     12n,
-    90n,
-    10n,
-    1080n
   ]
-  const asm = await compileR1cs('test/example.r1cs', inputMemory)
+  const asm = await compileR1cs('test/example.r1cs', input)
   const compiled = compile(asm)
   const trace = buildTrace(compiled.program)
   const proof = wasm.prove({
@@ -49,7 +45,7 @@ test('should fail to prove invalid input', async t => {
     11n, // change by 1
     1080n
   ]
-  const asm = await compileR1cs('test/example.r1cs', inputMemory)
+  const asm = await compileR1cs('test/example.r1cs', [12n], inputMemory)
   const compiled = compile(asm)
   const trace = buildTrace(compiled.program)
   const proof = wasm.prove({
