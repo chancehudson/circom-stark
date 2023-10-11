@@ -3,9 +3,14 @@ import { MultiPolynomial } from 'starkstark/src/MultiPolynomial.mjs'
 import { Polynomial } from 'starkstark/src/Polynomial.mjs'
 import { ScalarField } from 'starkstark/src/ScalarField.mjs'
 
+// export const field = new ScalarField(
+//   1n + 407n * (1n << 119n), // 0xCB800000000000000000000000000001
+//   85408008396924667383611388730472331217n
+// )
+
 export const field = new ScalarField(
-  1n + 407n * (1n << 119n), // 0xCB800000000000000000000000000001
-  85408008396924667383611388730472331217n
+  18446744069414584321n,
+  2717n
 )
 
 // compile an assembly file to a set of STARK constraints

@@ -13,6 +13,26 @@ function serializeBigint(v) {
   return out
 }
 
+test.skip('should compile and prove unirep epoch key r1cs', async t => {
+  const input = Array(7).fill(2n)
+  const asm = await compileR1cs('test/epochKeyLite_main.r1cs', input)
+  const compiled = compile(asm)
+  const trace = buildTrace(compiled.program)
+  const proof = wasm.prove({
+    transition_constraints: compiled.constraints.map(v => v.serialize()),
+    boundary: compiled.boundary.map(v => [v[0], v[1], serializeBigint(v[2])]),
+    trace: trace.map(t => t.map(v => serializeBigint(v))),
+  })
+  wasm.verify(proof, {
+    trace_len: trace.length,
+    register_count: compiled.program.registerCount,
+    transition_constraints: compiled.constraints.map(v => v.serialize()),
+    boundary: compiled.boundary.map(v => [v[0], v[1], serializeBigint(v[2])]),
+  })
+
+  t.pass()
+})
+
 test('should compile and prove r1cs', async t => {
   const input = [
     12n,

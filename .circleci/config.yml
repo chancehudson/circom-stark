@@ -29,8 +29,10 @@ jobs:
           name: Fetch rstark wasm
           command: |
             cd ..
-            wget https://github.com/vimwitch/rstark/releases/download/alpha-1/rstark.tar.gz
+            wget https://github.com/vimwitch/rstark/releases/download/alpha-1-goldilocks/rstark.tar.gz
             tar -xzf rstark.tar.gz
+            mkdir rstark
+            mv pkg rstark
       - run:
           name: Install Packages
           command: npm i
