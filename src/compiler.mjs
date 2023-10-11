@@ -61,12 +61,15 @@ export function buildTrace(program, inputs = {}) {
     const read2Selector = Array(memoryRegisterCount).fill(0n)
     const outputSelector = Array(memoryRegisterCount).fill(0n)
     const opcodeSelector = Array(opcodeCount).fill(0n)
-    let freeInput = 0n
     opcodeSelector[validOperations[name].opcode] = 1n
+    let freeInput = 0n
+    const scratch = Array(3).fill(0n)
     if (name === 'set') {
       // set some dummy read registers
       read1Selector[0] = 1n
+      scratch[0] = currentMemory[0]
       read2Selector[0] = 1n
+      scratch[1] = currentMemory[0]
       // set the output register
       outputSelector[+args[0]] = 1n
       // update the memory
@@ -80,29 +83,42 @@ export function buildTrace(program, inputs = {}) {
       } else {
         throw new Error(`No input supplied for named value "${args[1]}"`)
       }
+      scratch[2] = freeInput
     } else if (name === 'add' || name === 'mul') {
       read1Selector[+args[1]] = 1n
+      scratch[0] = currentMemory[+args[1]]
       read2Selector[+args[2]] = 1n
+      scratch[1] = currentMemory[+args[2]]
       outputSelector[+args[0]] = 1n
       memoryRegisters[+args[0]] = field[name](memoryRegisters[+args[1]], memoryRegisters[+args[2]])
+      scratch[2] = memoryRegisters[+args[0]]
     } else if (name === 'neg') {
       read1Selector[+args[1]] = 1n
+      scratch[0] = currentMemory[+args[1]]
       read2Selector[0] = 1n
+      scratch[1] = currentMemory[0]
       outputSelector[+args[0]] = 1n
       memoryRegisters[+args[0]] = field.neg(memoryRegisters[+args[1]])
+      scratch[2] = memoryRegisters[+args[0]]
     } else if (name === 'eq') {
       read1Selector[+args[0]] = 1n
+      scratch[0] = currentMemory[+args[0]]
       read2Selector[+args[1]] = 1n
+      scratch[1] = currentMemory[+args[1]]
       // set a dummy output, this is constrained
       // to not change in the vm
       outputSelector[0] = 1n
+      scratch[2] = memoryRegisters[0]
     } else if (name === 'inv') {
       read1Selector[+args[1]] = 1n
+      scratch[0] = currentMemory[+args[1]]
       read2Selector[0] = 1n
+      scratch[1] = currentMemory[0]
       outputSelector[+args[0]] = 1n
       memoryRegisters[+args[0]] = field.inv(memoryRegisters[+args[1]])
+      scratch[2] = memoryRegisters[+args[0]]
     }
-    trace.push([currentMemory, outputSelector, read1Selector, read2Selector, opcodeSelector, freeInput].flat())
+    trace.push([currentMemory, outputSelector, read1Selector, read2Selector, opcodeSelector, freeInput, scratch].flat())
   }
   trace.push([
     memoryRegisters,
@@ -110,7 +126,9 @@ export function buildTrace(program, inputs = {}) {
     [...Array(memoryRegisterCount-1).fill(0n), 1n],
     [...Array(memoryRegisterCount-1).fill(0n), 1n],
     [...Array(opcodeCount-1).fill(0n), 1n],
-    0n
+    0n,
+    // scratch
+    0n,0n,0n
   ].flat())
   return trace
 }
@@ -174,8 +192,9 @@ export function compile(asm) {
 
   // we need 3 selector values for each memory register
   // then a selector for each possible opcode
-  // then a single free input register
-  const registerCount = memoryRegisterCount * 4 + opcodeRegisterCount + 1
+  // then a free input register
+  // then 3 scratch registers
+  const registerCount = memoryRegisterCount * 4 + opcodeRegisterCount + 1 + 3
   const variables = Array(1+2*registerCount)
     .fill()
     .map((_, i) => new MultiPolynomial(field).term({ coef: 1n, exps: { [i]: 1n }}))
@@ -203,7 +222,7 @@ export function compile(asm) {
     constraints.push(c)
   }
 
-  // now let's constraint that all selector values must be either 0 or 1
+  // now let's constrain that all selector values must be either 0 or 1
   for (let x = memoryRegisterCount; x < memoryRegisterCount * 4 + opcodeRegisterCount; x++) {
     // x^2 - x constrains x to be either 0 or 1
     // e.g. 0^2 - 0 = 0 and 1^2 - 1 = 0
@@ -233,17 +252,30 @@ export function compile(asm) {
   // now build individual operation constraints
 
   const freeInRegister = prevState[4*memoryRegisterCount+opcodeRegisterCount]
+  const scratch1 = prevState[4*memoryRegisterCount+opcodeRegisterCount + 1]
+  const scratch2 = prevState[4*memoryRegisterCount+opcodeRegisterCount + 2]
+  const scratch3 = prevState[4*memoryRegisterCount+opcodeRegisterCount + 3]
 
-  const read1 = new MultiPolynomial(field)
-  const read2 = new MultiPolynomial(field)
+  const read1Constraint = new MultiPolynomial(field)
+  const read2Constraint = new MultiPolynomial(field)
   const outputLast = new MultiPolynomial(field)
-  const output = new MultiPolynomial(field)
+  const outputConstraint = new MultiPolynomial(field)
   for (let x = 0; x < memoryRegisterCount; x++) {
-    output.add(nextState[x].copy().mul(prevState[memoryRegisterCount + x]))
+    outputConstraint.add(nextState[x].copy().mul(prevState[memoryRegisterCount + x]))
     outputLast.add(prevState[x].copy().mul(prevState[memoryRegisterCount + x]))
-    read1.add(prevState[x].copy().mul(prevState[2*memoryRegisterCount + x]))
-    read2.add(prevState[x].copy().mul(prevState[3*memoryRegisterCount + x]))
+    read1Constraint.add(prevState[x].copy().mul(prevState[2*memoryRegisterCount + x]))
+    read2Constraint.add(prevState[x].copy().mul(prevState[3*memoryRegisterCount + x]))
   }
+
+  // use the scratch registers to store common intermediate values
+  // e.g. multiply the selector by the registers and store in scratch
+  // register
+  constraints.push(read1Constraint.sub(scratch1))
+  const read1 = scratch1
+  constraints.push(read2Constraint.sub(scratch2))
+  const read2 = scratch2
+  constraints.push(outputConstraint.sub(scratch3))
+  const output = scratch3
 
   // now write the constraints for each operator
 
@@ -260,8 +292,6 @@ export function compile(asm) {
   const inv = read1.copy().mul(output).sub(one)
   constraints.push(inv.copy().mul(prevState[4*memoryRegisterCount+validOperations['inv'].opcode]))
 
-  // this constraint is degree 5!
-  // TODO: possibly use the free input register to reduce this
   const mul = read1.copy().mul(read2).sub(output)
   constraints.push(mul.copy().mul(prevState[4*memoryRegisterCount+validOperations['mul'].opcode]))
 
