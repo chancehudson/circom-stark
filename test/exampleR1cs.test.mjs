@@ -1,5 +1,5 @@
 import test from 'ava'
-import { compileR1cs } from '../src/r1cs.mjs'
+import { compileR1cs } from '../src/r1csCompiler.mjs'
 import * as wasm from 'rstark'
 import { compile, buildTrace } from '../src/compiler.mjs'
 import fs from 'fs/promises'
