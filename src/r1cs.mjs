@@ -1,7 +1,8 @@
-import { readR1cs } from 'r1csfile'
 import { ScalarField } from 'starkstark/src/ScalarField.mjs'
 import { MultiPolynomial } from 'starkstark/src/MultiPolynomial.mjs'
 import { Polynomial } from 'starkstark/src/Polynomial.mjs'
+import { R1CS } from '../src/r1csParser.mjs'
+import fs from 'fs/promises'
 
 // take only the input variables and solve a system of
 // equations (the constraints) to return a complete witness
@@ -144,8 +145,9 @@ async function buildWitness(data, input = [], baseField) {
   return vars
 }
 
-export async function compileR1cs(file, input = [], memoryOverride) {
-  const data = await readR1cs(file)
+export async function compileR1cs(buffer, input = [], memoryOverride) {
+  const r = new R1CS(buffer)
+  r.parse()
   const {
     prime,
     constraints,
@@ -153,9 +155,9 @@ export async function compileR1cs(file, input = [], memoryOverride) {
     nPubInputs,
     nPrvInputs,
     nVars
-  } = data
+  } = r.data
   const baseField = new ScalarField(prime)
-  const memory = memoryOverride ? memoryOverride : (await buildWitness(data, input, baseField))
+  const memory = memoryOverride ? memoryOverride : (await buildWitness(r.data, input, baseField))
   const negOne = baseField.neg(1n)
   // order of variables
   // ONE, outputs, pub inputs, prv inputs

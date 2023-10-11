@@ -7,13 +7,13 @@
     "test": "ava --timeout 200000"
   },
   "dependencies": {
-    "r1csfile": "^0.0.47",
     "rstark": "../rstark/pkg",
     "starkstark": "vimwitch/starkstark#main"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "r1csfile": "^0.0.47",
     "ava": "^5.3.1"
   }
 }

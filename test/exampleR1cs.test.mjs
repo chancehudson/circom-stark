@@ -2,6 +2,11 @@ import test from 'ava'
 import { compileR1cs } from '../src/r1cs.mjs'
 import * as wasm from 'rstark'
 import { compile, buildTrace } from '../src/compiler.mjs'
+import fs from 'fs/promises'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 function serializeBigint(v) {
   let _v = v
@@ -15,7 +20,9 @@ function serializeBigint(v) {
 
 test.skip('should compile and prove unirep epoch key r1cs', async t => {
   const input = Array(7).fill(2n)
-  const asm = await compileR1cs('test/epochKeyLite_main.r1cs', input)
+  const file = path.join(__dirname, 'epochKeyLite_main.r1cs')
+  const fileData = await fs.readFile(file)
+  const asm = await compileR1cs(fileData.buffer, input)
   const compiled = compile(asm)
   const trace = buildTrace(compiled.program)
   const proof = wasm.prove({
@@ -37,7 +44,9 @@ test('should compile and prove r1cs', async t => {
   const input = [
     12n,
   ]
-  const asm = await compileR1cs('test/example.r1cs', input)
+  const file = path.join(__dirname, 'example.r1cs')
+  const fileData = await fs.readFile(file)
+  const asm = await compileR1cs(fileData.buffer, input)
   const compiled = compile(asm)
   const trace = buildTrace(compiled.program)
   const proof = wasm.prove({
@@ -65,7 +74,9 @@ test('should fail to prove invalid input', async t => {
     11n, // change by 1
     1080n
   ]
-  const asm = await compileR1cs('test/example.r1cs', [12n], inputMemory)
+  const file = path.join(__dirname, 'example.r1cs')
+  const fileData = await fs.readFile(file)
+  const asm = await compileR1cs(fileData.buffer, [12n], inputMemory)
   const compiled = compile(asm)
   const trace = buildTrace(compiled.program)
   const proof = wasm.prove({
