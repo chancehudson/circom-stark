@@ -13,6 +13,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "r1csfile": "^0.0.47",
     "ava": "^5.3.1"
   }
 }

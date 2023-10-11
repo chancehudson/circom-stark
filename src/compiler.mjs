@@ -3,9 +3,14 @@ import { MultiPolynomial } from 'starkstark/src/MultiPolynomial.mjs'
 import { Polynomial } from 'starkstark/src/Polynomial.mjs'
 import { ScalarField } from 'starkstark/src/ScalarField.mjs'
 
+// export const field = new ScalarField(
+//   1n + 407n * (1n << 119n), // 0xCB800000000000000000000000000001
+//   85408008396924667383611388730472331217n
+// )
+
 export const field = new ScalarField(
-  1n + 407n * (1n << 119n),
-  85408008396924667383611388730472331217n
+  18446744069414584321n,
+  2717n
 )
 
 // compile an assembly file to a set of STARK constraints
@@ -44,6 +49,7 @@ const validOperations = {
 const opcodeCount = Object.keys(validOperations).length - 1
 
 // program should be the compiled program output from `compile`
+// TODO: check trace validity before proving?
 export function buildTrace(program, inputs = {}) {
   const { steps, registerCount, memoryRegisterCount, opcodeRegisterCount } = program
   const trace = []
