@@ -47,6 +47,7 @@ test('should compile and prove r1cs', async t => {
   const file = path.join(__dirname, 'example.r1cs')
   const fileData = await fs.readFile(file)
   const asm = await compileR1cs(fileData.buffer, input)
+  console.log(asm)
   const compiled = compile(asm)
   const trace = buildTrace(compiled.program)
   const proof = wasm.prove({

@@ -15,6 +15,7 @@ export async function compileR1cs(buffer, input = [], memoryOverride) {
   } = r.data
   const baseField = new ScalarField(prime)
   const memory = memoryOverride ? memoryOverride : (await buildWitness(r.data, input))
+  console.log(memory)
   const negOne = baseField.neg(1n)
   // order of variables
   // ONE, outputs, pub inputs, prv inputs

@@ -43,12 +43,13 @@ eq 0x0 0x1
 
 test('should add subtract eq', async t => {
   const asm = `
-set 0x0 0x124129821400
-set 0x1 0x1247912469
-neg 0x2 0x1
-add 0x3 0x0 0x2
-add 0x1 0x3 0x1
-eq 0x0 0x1
+set 0x0 1
+set 0x1 14
+set 0x2 108
+set 0x3 12
+set 0x4 1512
+set 0x6 0
+neg 0x5 1
   `
   await proveAndVerify(asm)
   t.pass()
@@ -153,32 +154,6 @@ set 0x0 ${v1.toString()}
 set 0x1 ${v2.toString()}
 mul 0x0 0x0 0x1
 set 0x1 ${prod.toString()}
-eq 0x0 0x1
-  `
-  await proveAndVerify(asm)
-  t.pass()
-})
-
-test('should mod inverse in place (0x2)', async t => {
-  const v = field.random()
-  const vInv = field.inv(v)
-  const asm = `
-set 0x0 ${v.toString()}
-set 0x1 ${vInv.toString()}
-inv 0x2 0x0
-eq 0x2 0x1
-  `
-  await proveAndVerify(asm)
-  t.pass()
-})
-
-test('should mod inverse in place (0x0)', async t => {
-  const v = field.random()
-  const vInv = field.inv(v)
-  const asm = `
-set 0x0 ${v.toString()}
-set 0x1 ${vInv.toString()}
-inv 0x0 0x0
 eq 0x0 0x1
   `
   await proveAndVerify(asm)

@@ -35,10 +35,6 @@ const validOperations = {
     argumentCount: 2,
     opcode: 0x4,
   },
-  inv: {
-    argumentCount: 2,
-    opcode: 0x5,
-  },
   out: {
     argumentCount: 2,
     // virtual opcode not present in trace
@@ -63,7 +59,7 @@ export function buildTrace(program, inputs = {}) {
     const opcodeSelector = Array(opcodeCount).fill(0n)
     opcodeSelector[validOperations[name].opcode] = 1n
     let freeInput = 0n
-    const scratch = Array(3).fill(0n)
+    const scratch = Array(4).fill(0n)
     if (name === 'set') {
       // set some dummy read registers
       read1Selector[0] = 1n
@@ -109,15 +105,8 @@ export function buildTrace(program, inputs = {}) {
       // to not change in the vm
       outputSelector[0] = 1n
       scratch[2] = memoryRegisters[0]
-    } else if (name === 'inv') {
-      read1Selector[+args[1]] = 1n
-      scratch[0] = currentMemory[+args[1]]
-      read2Selector[0] = 1n
-      scratch[1] = currentMemory[0]
-      outputSelector[+args[0]] = 1n
-      memoryRegisters[+args[0]] = field.inv(memoryRegisters[+args[1]])
-      scratch[2] = memoryRegisters[+args[0]]
     }
+    scratch[3] = field.mul(scratch[0], scratch[1])
     trace.push([currentMemory, outputSelector, read1Selector, read2Selector, opcodeSelector, freeInput, scratch].flat())
   }
   trace.push([
@@ -128,7 +117,7 @@ export function buildTrace(program, inputs = {}) {
     [...Array(opcodeCount-1).fill(0n), 1n],
     0n,
     // scratch
-    0n,0n,0n
+    0n,0n,0n,0n
   ].flat())
   return trace
 }
@@ -193,8 +182,8 @@ export function compile(asm) {
   // we need 3 selector values for each memory register
   // then a selector for each possible opcode
   // then a free input register
-  // then 3 scratch registers
-  const registerCount = memoryRegisterCount * 4 + opcodeRegisterCount + 1 + 3
+  // then 4 scratch registers
+  const registerCount = memoryRegisterCount * 4 + opcodeRegisterCount + 1 + 4
   const variables = Array(1+2*registerCount)
     .fill()
     .map((_, i) => new MultiPolynomial(field).term({ coef: 1n, exps: { [i]: 1n }}))
@@ -255,6 +244,7 @@ export function compile(asm) {
   const scratch1 = prevState[4*memoryRegisterCount+opcodeRegisterCount + 1]
   const scratch2 = prevState[4*memoryRegisterCount+opcodeRegisterCount + 2]
   const scratch3 = prevState[4*memoryRegisterCount+opcodeRegisterCount + 3]
+  const scratch4 = prevState[4*memoryRegisterCount+opcodeRegisterCount + 4]
 
   const read1Constraint = new MultiPolynomial(field)
   const read2Constraint = new MultiPolynomial(field)
@@ -277,6 +267,8 @@ export function compile(asm) {
   constraints.push(outputConstraint.sub(scratch3))
   const output = scratch3
 
+  constraints.push(read1.copy().mul(read2).sub(scratch4))
+
   // now write the constraints for each operator
 
   // just constrain that the free input and output registers are equal
@@ -289,10 +281,7 @@ export function compile(asm) {
   const neg = read1.copy().add(output)
   constraints.push(neg.copy().mul(prevState[4*memoryRegisterCount+validOperations['neg'].opcode]))
 
-  const inv = read1.copy().mul(output).sub(one)
-  constraints.push(inv.copy().mul(prevState[4*memoryRegisterCount+validOperations['inv'].opcode]))
-
-  const mul = read1.copy().mul(read2).sub(output)
+  const mul = scratch4.copy().sub(output)
   constraints.push(mul.copy().mul(prevState[4*memoryRegisterCount+validOperations['mul'].opcode]))
 
   const eq = read1.copy().sub(read2)
