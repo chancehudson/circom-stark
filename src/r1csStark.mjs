@@ -9,8 +9,7 @@ export const field = new ScalarField(
 )
 
 export function compile(r1csBuffer, input) {
-  const r = new R1CS(r1csBuffer)
-  r.parse()
+  const { data } = new R1CS(r1csBuffer)
   const {
     prime,
     constraints,
@@ -18,12 +17,14 @@ export function compile(r1csBuffer, input) {
     nPubInputs,
     nPrvInputs,
     nVars
-  } = r.data
+  } = data
 
-  const witness = buildWitness(r.data, input)
+  if (prime !== field.p) {
+    throw new Error(`r1cs prime does not match expected value. Got ${prime} expected ${field.p}`)
+  }
 
-  let registerCount = nVars
-  const memory = [...witness]
+  const registerCount = nVars
+  const memory = buildWitness(data, input)
 
   // for all r1cs constraints make stark constraints
   // using signals in the trace memory
@@ -46,8 +47,6 @@ export function compile(r1csBuffer, input) {
   // TODO: form a single constraint using a RLC
   // need to sample the input to get the randomness
   for (const [a, b, c] of constraints) {
-    // [{},{},{}]
-
     const aPoly = zero.copy()
     for (const [key, value] of Object.entries(a)) {
       const coef = new MultiPolynomial(field).term({ coef: value, exps: { [0]: 0n }})
@@ -64,14 +63,14 @@ export function compile(r1csBuffer, input) {
       cPoly.add(one.copy().mul(prevState[+key]).mul(coef))
     }
 
-    // evaluate the constraint
-    const constraint = aPoly.copy().mul(bPoly).sub(cPoly)
-    starkConstraints.push(constraint)
+    starkConstraints.push(aPoly.copy().mul(bPoly).sub(cPoly))
   }
 
+  // where in the memory the public inputs start
+  const pubInputsOffset = 1 + nOutputs
   return {
     constraints: starkConstraints,
-    boundary: memory.slice(1+nOutputs, 1+nOutputs+nPubInputs).map((val, i) => [1, i+1+nOutputs, val]),
+    boundary: memory.slice(pubInputsOffset, pubInputsOffset+nPubInputs).map((val, i) => [1, i+pubInputsOffset, val]),
     trace: [memory, memory],
     program: {
       registerCount,
