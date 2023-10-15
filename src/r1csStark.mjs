@@ -8,7 +8,7 @@ export const field = new ScalarField(
   2717n
 )
 
-export function compile(r1csBuffer, input) {
+export function compile(r1csBuffer, input = [], memoryOverride) {
   const { data } = new R1CS(r1csBuffer)
   const {
     prime,
@@ -24,7 +24,7 @@ export function compile(r1csBuffer, input) {
   }
 
   const registerCount = nVars
-  const memory = buildWitness(data, input)
+  const memory = memoryOverride ?? buildWitness(data, input)
 
   // for all r1cs constraints make stark constraints
   // using signals in the trace memory
