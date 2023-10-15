@@ -71,8 +71,7 @@ export function compile(r1csBuffer, input) {
 
   return {
     constraints: starkConstraints,
-    // dummy boundary constraint
-    boundary: [[1, 0, memory[0]]],
+    boundary: memory.slice(1+nOutputs, 1+nOutputs+nPubInputs).map((val, i) => [1, i+1+nOutputs, val]),
     trace: [memory, memory],
     program: {
       registerCount,
