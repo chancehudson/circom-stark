@@ -4,7 +4,6 @@ import { buildWitness } from './witnessBuilder.mjs'
 
 export async function compileR1cs(buffer, input = [], memoryOverride) {
   const r = new R1CS(buffer)
-  r.parse()
   const {
     prime,
     constraints,

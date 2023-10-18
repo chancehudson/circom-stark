@@ -30,10 +30,10 @@ export class R1CS {
     this._view = new DataView(buffer)
     this._offset = 0
 
-    this._parseInitial()
+    this.parse()
   }
 
-  _parseInitial() {
+  parse() {
     // read and check the magic value
     let offset = 0
     this.magicR1cs = this._view.getUint32(offset, true)
@@ -44,9 +44,6 @@ export class R1CS {
 
     this.sectionCount = this._view.getUint32(offset, true)
     offset += 4
-  }
-
-  parse() {
     this.readSections()
     for (const k of Object.keys(this._sections)) {
       this.parseSection(k)

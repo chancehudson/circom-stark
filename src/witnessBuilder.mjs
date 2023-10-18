@@ -55,6 +55,7 @@ export function buildWitness(data, input = []) {
       }
     }
   }
+  const allConstraints = [...constraints]
   // iterate over the set of constraints
   // look for constraints that have only 1 unknown
   // and solve for that unknown
@@ -142,6 +143,12 @@ export function buildWitness(data, input = []) {
     }
     if (solved.length === 0)
       throw new Error('Unable to solve for remaining variables')
+  }
+  // attempt to evaluate the constraints using the provided inputs
+  for (const c of allConstraints) {
+    if (c.evaluate(vars) !== 0n) {
+      throw new Error('invalid inputs')
+    }
   }
   return vars
 }
