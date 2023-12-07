@@ -115,6 +115,9 @@ export function buildWitness(data, input = []) {
         const _expKey = Array(unknownVars[0]).fill(0n)
         _expKey.push(1n)
         const expKey = MultiPolynomial.expVectorToString(_expKey)
+        const _expKey2 = Array(unknownVars[0]).fill(0n)
+        _expKey2.push(2n)
+        const expKey2 = MultiPolynomial.expVectorToString(_expKey2)
         if (cc.expMap.size !== 2) {
           continue
           throw new Error('expected exactly 2 remaining terms')
@@ -122,12 +125,12 @@ export function buildWitness(data, input = []) {
         if (!cc.expMap.has(expKey)) {
           throw new Error('cannot find remaining variable')
         }
-        if (cc.expMap.has(expKey.replace('1', '2'))) {
+        if (cc.expMap.has(expKey2)) {
           // we're in the case of 0 = x^2 + x
           // reduce by dividing an x out
           cc.expMap.set('0', cc.expMap.get(expKey))
-          cc.expMap.set(expKey, cc.expMap.get(expKey.replace('1', '2')))
-          cc.expMap.delete(expKey.replace('1', '2'))
+          cc.expMap.set(expKey, cc.expMap.get(expKey2))
+          cc.expMap.delete(expKey2)
         }
         if (!cc.expMap.has('0')) {
           throw new Error('exactly one term should be a constant')

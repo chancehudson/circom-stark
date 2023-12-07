@@ -23,8 +23,11 @@ export function compile(r1csBuffer, input = [], memoryOverride) {
     throw new Error(`r1cs prime does not match expected value. Got ${prime} expected ${field.p}`)
   }
 
-  const registerCount = nVars
+  const registerCount = Math.ceil(nVars / 2)
   const memory = memoryOverride ?? buildWitness(data, input)
+  if (memory.length % 2 === 1) {
+    memory.push(0n)
+  }
 
   // for all r1cs constraints make stark constraints
   // using signals in the trace memory
@@ -42,25 +45,30 @@ export function compile(r1csBuffer, input = [], memoryOverride) {
   const zero = new MultiPolynomial(field).term({ coef: 0n, exps: { [0]: 0n }})
   const one = new MultiPolynomial(field).term({ coef: 1n, exps: { [0]: 0n }})
 
+  const varByIndex = (i) => {
+    if (i < registerCount) {
+      return nextState[i]
+    }
+    return prevState[i-registerCount]
+  }
+
   const starkConstraints = []
 
-  // TODO: form a single constraint using a RLC
-  // need to sample the input to get the randomness
   for (const [a, b, c] of constraints) {
     const aPoly = zero.copy()
     for (const [key, value] of Object.entries(a)) {
       const coef = new MultiPolynomial(field).term({ coef: value, exps: { [0]: 0n }})
-      aPoly.add(one.copy().mul(prevState[+key]).mul(coef))
+      aPoly.add(one.copy().mul(varByIndex(+key)).mul(coef))
     }
     const bPoly = zero.copy()
     for (const [key, value] of Object.entries(b)) {
       const coef = new MultiPolynomial(field).term({ coef: value, exps: { [0]: 0n }})
-      bPoly.add(one.copy().mul(prevState[+key]).mul(coef))
+      bPoly.add(one.copy().mul(varByIndex(+key)).mul(coef))
     }
     const cPoly = zero.copy()
     for (const [key, value] of Object.entries(c)) {
       const coef = new MultiPolynomial(field).term({ coef: value, exps: { [0]: 0n }})
-      cPoly.add(one.copy().mul(prevState[+key]).mul(coef))
+      cPoly.add(one.copy().mul(varByIndex(+key)).mul(coef))
     }
 
     starkConstraints.push(aPoly.copy().mul(bPoly).sub(cPoly))
@@ -71,7 +79,7 @@ export function compile(r1csBuffer, input = [], memoryOverride) {
   return {
     constraints: starkConstraints,
     boundary: memory.slice(pubInputsOffset, pubInputsOffset+nPubInputs).map((val, i) => [1, i+pubInputsOffset, val]),
-    trace: [memory, memory],
+    trace: [memory.slice(0, registerCount), memory.slice(registerCount)].reverse(),
     program: {
       registerCount,
     }

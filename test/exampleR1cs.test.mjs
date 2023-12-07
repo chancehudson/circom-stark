@@ -51,7 +51,7 @@ test('should compile and prove unirep epoch key r1cs', async t => {
     boundary: compiled.boundary.map(v => [v[0], v[1], serializeBigint(v[2])]),
     trace: compiled.trace.map(t => t.map(v => serializeBigint(v))),
   })
-  // console.log(`proved in ${+new Date() - _} ms`)
+  console.log(`proved in ${+new Date() - _} ms`)
   wasm.verify(proof, {
     trace_len: compiled.trace.length,
     register_count: compiled.program.registerCount,
