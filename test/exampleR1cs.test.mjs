@@ -10,11 +10,12 @@ import { compile } from '../src/r1csStark.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 function serializeBigint(v) {
+  const bits = 8n
   let _v = v
   const out = []
   while (_v > 0n) {
-    out.push(Number(_v & ((1n << 32n) - 1n)))
-    _v >>= 32n
+    out.push(Number(_v & ((1n << bits) - 1n)))
+    _v >>= bits
   }
   return out
 }
@@ -42,7 +43,7 @@ test.skip('should compile and prove bits r1cs', async () => {
 
 test('should compile and prove unirep epoch key r1cs', async t => {
   const input = Array(7).fill(0n)
-  const file = path.join(__dirname, 'epochKeyLite_main.r1cs')
+  const file = path.join(__dirname, 'epochKey_main.r1cs')
   const fileData = await fs.readFile(file)
   const compiled = compile(fileData.buffer, input)
   const _ = +new Date()

@@ -23,6 +23,80 @@ export function compile(r1csBuffer, input = [], memoryOverride) {
     throw new Error(`r1cs prime does not match expected value. Got ${prime} expected ${field.p}`)
   }
 
+  let minRegisters = 0
+  for (const [a, b, c] of constraints) {
+    const totalVars = Object.keys(a).length + Object.keys(b).length + Object.keys(c).length
+    if (totalVars > minRegisters) {
+      minRegisters = totalVars
+    }
+  }
+  console.log(`Minimum register count: ${Math.ceil(minRegisters)}`)
+  console.log(`Total variables: ${nVars}`)
+  console.log(`Total constraints: ${constraints.length}`)
+  // console.log(constraints)
+
+  // for each constraint determine what variables it needs
+  // find common sets of variables for constraints
+
+  // array of variable indices
+  const varGroups = []
+
+  const groupContainsVars = (vars, group) => {
+    let count = 0
+    for (const v of vars) {
+      if (group[v] !== undefined) count++
+    }
+    return count
+  }
+  const constraintGroupMap = {}
+
+  for (const [key, [a, b, c]] of Object.entries(constraints)) {
+    const varIndices = Object.keys({ ...a, ...b, ...c })
+    let added = false
+    let bestGroup = [-1, -1]
+    for (const [groupIndex, group] of Object.entries(varGroups)) {
+      const varsInGroup = groupContainsVars(varIndices, group)
+      if (varsInGroup > bestGroup[1] && Object.keys(group).length < 100) {
+        bestGroup = [groupIndex, varsInGroup]
+      }
+    }
+    // no suitable group was found, make a new one
+    if (bestGroup[0] === -1) {
+      constraintGroupMap[key] = varGroups.length
+      varGroups.push({...a, ...b, ...c})
+    } else {
+      constraintGroupMap[key] = bestGroup[0]
+      for (const k of varIndices) {
+        varGroups[bestGroup[0]][k] = true
+      }
+    }
+  }
+  // groups cannot share variables, they must be distinct
+  console.log(`${varGroups.length} groups`)
+  for (const [key, g] of Object.entries(varGroups)) {
+    delete g['0']
+    delete g[0]
+  }
+  for (const [key, g] of Object.entries(varGroups)) {
+
+    for (const [keyInternal, gInternal] of Object.entries(varGroups)) {
+      if (key === keyInternal) continue
+      let count = 0
+      for (const k of Object.keys(g)) {
+        if (gInternal[k]) {
+          count++
+          console.log(k)
+        }
+      }
+      if (count > 0) console.log(`group ${key} overlap ${keyInternal} n: ${count}`)
+    }
+  }
+  for (const g of varGroups) {
+    console.log(Object.keys(g).length)
+  }
+
+return
+
   const registerCount = Math.ceil(nVars / 2)
   const memory = memoryOverride ?? buildWitness(data, input)
   if (memory.length % 2 === 1) {
