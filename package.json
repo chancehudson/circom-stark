@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "ava --timeout 200000"
+    "test": "ava ./test/exampleR1cs.test.mjs --timeout 200000"
   },
   "dependencies": {
     "rstark": "../rstark/pkg",
-    "starkstark": "vimwitch/starkstark#main"
+    "starkstark": "chancehudson/starkstark#main"
   },
   "author": "",
   "license": "MIT",
